@@ -1,0 +1,127 @@
+= Enhanced Dynamo DB  and Integration Test Using Dynamo Local
+Fazeem Mohammed
+2022-10-16
+:jbake-type: post
+:jbake-status: published
+:jbake-tags: blog, asciidoc
+:idprefix:
+
+AWS Released  new Enhanced Dynamo Client https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/dynamodb-enhanced-client.html[Enhanced Dynamo Client] which helps Java developers to easily Implement  DAO Implementation without writing the mapping logic and AWS provides https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html[Downloadable DynamoDb] which  helps developers to do the Integration testing with Dynamo DB without connecting to the Cloud.
+
+This post explains how to Implement  a generic *DynamoDBService* Class using https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/dynamodb-enhanced-client.html[Enhanced Dynamo Client] and Write Unit/Integration Test Cases  using https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html[Downloadable DynamoDb]
+
+The full source code can be found under following https://github.com/fazeem84/DynamoDbLocal[repo]
+
+I have used following links and github repos to build this example
+
+* https://www.baeldung.com/dynamodb-local-integration-testsl[baeldung]
+* https://github.com/redskap/aws-dynamodb-java-example-local-testing[redskap GitRepository]
+
+
+== Prerequisite
+
+. Java > 11
+. Gradle > 5
+
+== Setting Enhanced Client in Gradle
+To set up enhanced Client in Gradle following dependecies needs to be added
+
+[#EnhancedDynamo,gradle]
+----
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.11.434'
+    implementation 'software.amazon.awssdk:dynamodb:2.17.28'
+    implementation 'software.amazon.awssdk:dynamodb-enhanced:2.17.28'
+----
+
+== Setting up DynamoDb Local
+
+Aws documentation provides steps to setting up https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html[maven build] but Gradle setting up is not provided by AWS  and this library is not available central maven repo, so users needs to set up aws maven repo for setting DynamoDb Local
+
+[#MavenRepoSetup,gradle]
+----
+repositories {
+    maven {
+        name
+         url "https://s3-us-west-2.amazonaws.com/dynamodb-local/release"
+    }
+}
+----
+
+following dependency will add DynamoDbLocal to the gradle project
+
+[#DynamoLocalSetup,gradle]
+----
+testImplementation group: 'com.amazonaws', name: 'DynamoDBLocal', version: '1.11.119'
+----
+you can find more info about the set up in https://github.com/redskap/aws-dynamodb-java-example-local-testing/blob/master/README.md
+ . As a part of test setup copy https://github.com/redskap/aws-dynamodb-java-example-local-testing/blob/master/src/test/java/io/redskap/java/aws/dynamodb/example/local/testing/AwsDynamoDbLocalTestUtils.java[AwsDynamoDbLocalTestUtils] and call https://github.com/redskap/aws-dynamodb-java-example-local-testing/blob/master/src/test/java/io/redskap/java/aws/dynamodb/example/local/testing/AwsDynamoDbLocalTestUtils.java#L30[AwsDynamoDbLocalTestUtils#initSqLite()] during setup function of JUnit Test class
+
+=== DynamoDb Domain POJO
+This class is POJO representation of Dynamo DB schema, I have used  https://projectlombok.org/[lombok] to avoid boiler plating of Getter and Setter methods, @DynamoDbBean represents dynamo db structure and @DynamoDbPartitionKey represents primary key id
+[#DynamoDB,Java]
+----
+@Data
+@DynamoDbBean
+public class Student {
+    private String studentId;
+    private String studentName;
+    private String department;
+    @DynamoDbPartitionKey
+    @DynamoDbAttribute("studentId")
+    public String getStudentId() {
+        return studentId;
+    }
+}
+----
+
+=== DynamoDb Service Implementation
+
+This class has full DAO implementation
+
+. CreateTable
+. Insert/Update Item based on partitions key
+. Get Item by Id
+
+https://github.com/fazeem84/DynamoDbLocal/blob/main/src/main/java/com/dynamo/local/service/DynamoDBService.java[DynamoDBService.java]
+
+== Setting Up JUnit Test class
+
+During the startup JUnit will spin up a local dynamo DB instance and following code shows how to establish DynamoClient connectivity to local instance
+
+[#DynamoDB,Java]
+----
+private static final String TABLE_NAME = "Student";
+private static  DynamoDBProxyServer server;
+private static final String port = "8000";
+private static final String uri = "http://localhost:"+port;
+
+ @BeforeEach
+    public void setUpTest() throws Exception {
+        'AwsDynamoDbLocalTestUtils copied from the github repo as explained earlier'
+        AwsDynamoDbLocalTestUtils.initSqLite();
+        'This line will spin up local instance on 8080 port'
+        server = ServerRunner.createServerFromCommandLineArgs(
+                new String[]{"-inMemory", "-port", port});
+        server.start();
+        client=DynamoDbClient.builder()
+                .endpointOverride(URI.create(uri))
+                .region(Region.AF_SOUTH_1)'Any region should work '
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create("fakeMyKeyId","fakeSecretAccessKey")))
+                .build();
+
+    }
+----
+
+
+
+
+
+
+
+
+
+
+
+
+
