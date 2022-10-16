@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+}
+repositories {
+    maven {
+        name
+         url "https://s3-us-west-2.amazonaws.com/dynamodb-local/release"
+    }
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation 'com.google.guava:guava:26.0-jre'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.11.434'
+    implementation 'software.amazon.awssdk:dynamodb:2.17.28'
+    implementation 'software.amazon.awssdk:dynamodb-enhanced:2.17.28'
+
+
+
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-params:5.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+
+    testImplementation group: 'com.amazonaws', name: 'DynamoDBLocal', version: '1.11.119'
+
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.19.0'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.29'
+
+
+
+}
+test {
+    useJUnitPlatform()
+    testLogging.showStandardStreams = true
+}
