@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.net.URI;
 
 public class DynamoServiceTest {
-    public static final String TABLE_NAME = "Student";
+    private static final String TABLE_NAME = "Student";
     private static  DynamoDBProxyServer server;
     private static final String port = "8000";
     private static final String uri = "http://localhost:"+port;
